@@ -1,0 +1,33 @@
+* {
+  padding: 0;
+  box-sizing: border-box;
+  background-color: var(--color-bg-primary);
+}
+
+html, body {
+  margin: 1rem;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+  background-color: var(--color-bg-primary);
+}
+
+:root {
+  --color-primary: #252B2B; /* Primary brand color */
+  --color-secondary: #DC2011; /* Accent or secondary brand color */
+  --color-bg-primary: #252B2B ; /* Main background */
+  --color-bg-secondary: #4C4F54; /* Lighter background or highlights */
+  --color-text-primary: #380f17; /* Main text color */
+  --color-text-secondary: #8f0b13; /* Secondary text color */
+  --color-text-light: #efdfc5; /* Light text on dark backgrounds */
+  --font-size-base: 16px;
+  --spacing: 1rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
