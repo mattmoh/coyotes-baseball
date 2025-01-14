@@ -58,21 +58,28 @@ const App = () => {
   
     return () => {
       if (subscription && subscription.unsubscribe) {
-        subscription.unsubscribe(); // Clean up listener
+        subscription.unsubscribe();
       }
     };
-  }, [getSession]); // Dependency array ensures this only runs once
+  }, [getSession]);
 
   useEffect(() => {
     const fetchCalendar = async () => {
       try {
+        console.log('Fetching calendar...');
         const response = await fetch(import.meta.env.VITE_GC_CALENDAR);
+        console.log('Calendar response:', response);
         const data = await response.text();
+        console.log('Calendar data:', data);
         const parsedData = ical.parseICS(data);
+        console.log('Parsed calendar data:', parsedData);
         const events = Object.values(parsedData).filter(event => event.type === 'VEVENT');
+        console.log('Filtered events:', events);
         const upcomingEvents = events.filter(event => new Date(event.start) > new Date());
+        console.log('Upcoming events:', upcomingEvents);
         upcomingEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
         setNextEvent(upcomingEvents[0]);
+        console.log('Next event:', upcomingEvents[0]);
       } catch (error) {
         console.error('Error fetching calendar:', error);
       }
@@ -104,16 +111,14 @@ const App = () => {
         <img src={Coyotes} className="logo" alt="Coyotes" />
         <h1>Skokie Coyotes 8U</h1>
       </div>
-      <div className="next-event">
+      <div className="header">
         {nextEvent ? (
           <>
             <h2>Next Event</h2>
             <p>{nextEvent.summary}</p>
             <p>{new Date(nextEvent.start).toLocaleString()}</p>
           </>
-        ) : (
-          <p>Loading next event...</p>
-        )}
+        ) : null}
       </div>
       <Router>
         <AppRoutes 
