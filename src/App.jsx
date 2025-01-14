@@ -66,10 +66,13 @@ const App = () => {
 
   const fetchCalendar = async () => {
     try {
-      const response = await fetch(
-        import.meta.env.VITE_GC_CALENDAR
-      );
+      const response = await fetch(import.meta.env.VITE_GC_CALENDAR);
       const data = await response.text();
+  
+      // Check if the response is a valid .ics file
+      if (!data.startsWith("BEGIN:VCALENDAR")) {
+        throw new Error("Invalid .ics file");
+      }
   
       // Parse the .ics file
       const jcalData = ICAL.parse(data);
@@ -180,9 +183,7 @@ const App = () => {
           <p>{nextEvent.summary}</p>
           <p>{new Date(nextEvent.startDate).toLocaleString()}</p>
         </div>
-      ) : (
-        <p>Loading next event...</p>
-      )}
+      ) : ( null )}
     </div>
       <Router>
         <AppRoutes 
