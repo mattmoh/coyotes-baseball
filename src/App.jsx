@@ -8,6 +8,7 @@ import Photos from './pages/Photos';
 import Admin from './pages/Admin';
 import Auth from './pages/Auth';
 import ical from 'ical';
+import ICAL from "ical.js";
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -63,28 +64,89 @@ const App = () => {
     };
   }, [getSession]);
 
-  useEffect(() => {
-    const fetchCalendar = async () => {
-      try {
-        console.log('Fetching calendar...');
-        const response = await fetch(import.meta.env.VITE_GC_CALENDAR);
-        console.log('Calendar response:', response);
-        const data = await response.text();
-        console.log('Calendar data:', data);
-        const parsedData = ical.parseICS(data);
-        console.log('Parsed calendar data:', parsedData);
-        const events = Object.values(parsedData).filter(event => event.type === 'VEVENT');
-        console.log('Filtered events:', events);
-        const upcomingEvents = events.filter(event => new Date(event.start) > new Date());
-        console.log('Upcoming events:', upcomingEvents);
-        upcomingEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
-        setNextEvent(upcomingEvents[0]);
-        console.log('Next event:', upcomingEvents[0]);
-      } catch (error) {
-        console.error('Error fetching calendar:', error);
+  const fetchCalendar = async () => {
+    try {
+      const response = await fetch(
+        '/api/ics-calendar-documents/user/ccbe7020-5bd2-4e1c-a765-279cfdcd3aef.ics?teamId=ed885410-3f79-44a3-bf00-e56aa53943a8&token=568f8c48fd9fdea20eab815a5321217fcf55744ede76cf3e3b6ddfba9b473d64'
+      );
+      const data = await response.text();
+  
+      // Parse the .ics file
+      const jcalData = ICAL.parse(data);
+      const comp = new ICAL.Component(jcalData);
+      const events = comp.getAllSubcomponents("vevent").map(event => new ICAL.Event(event));
+  
+      const now = new Date();
+  
+      // Find the next valid event
+      const upcomingEvent = events
+        .filter(event => {
+          let eventStartDate, eventEndDate;
+  
+          try {
+            if (event.startDate) {
+              if (event.startDate.isDate) {
+                // All-day events
+                eventStartDate = new Date(
+                  event.startDate.year,
+                  event.startDate.month - 1,
+                  event.startDate.day
+                );
+                eventEndDate = event.endDate
+                  ? new Date(
+                      event.endDate.year,
+                      event.endDate.month - 1,
+                      event.endDate.day
+                    )
+                  : new Date(eventStartDate); // Use start date if end date is missing
+              } else {
+                // Timed events
+                eventStartDate = event.startDate.toJSDate();
+                eventEndDate = event.endDate ? event.endDate.toJSDate() : eventStartDate;
+              }
+            } else {
+              return false; // Skip events without a valid start date
+            }
+  
+            // Validate and normalize dates
+            if (!(eventStartDate instanceof Date) || isNaN(eventStartDate)) {
+              return false; // Skip invalid dates
+            }
+            if (!(eventEndDate instanceof Date) || isNaN(eventEndDate)) {
+              eventEndDate = new Date(eventStartDate);
+            }
+  
+            eventStartDate.setHours(0, 0, 0, 0);
+            eventEndDate.setHours(0, 0, 0, 0);
+  
+            return eventEndDate >= now; // Include ongoing and future events
+          } catch (error) {
+            console.warn("Invalid event data:", event, error);
+            return false; // Skip events with parsing errors
+          }
+        })
+        .sort((a, b) => a.startDate.toJSDate() - b.startDate.toJSDate())[0]; // Sort and pick the earliest
+  
+      if (upcomingEvent) {
+        setNextEvent({
+          summary: upcomingEvent.summary || "No Title",
+          startDate: upcomingEvent.startDate.isDate
+            ? new Date(upcomingEvent.startDate.year, upcomingEvent.startDate.month - 1, upcomingEvent.startDate.day)
+            : upcomingEvent.startDate.toJSDate(),
+          endDate: upcomingEvent.endDate
+            ? (upcomingEvent.endDate.isDate
+                ? new Date(upcomingEvent.endDate.year, upcomingEvent.endDate.month - 1, upcomingEvent.endDate.day)
+                : upcomingEvent.endDate.toJSDate())
+            : null,
+          location: upcomingEvent.location || "No Location",
+        });
       }
-    };
+    } catch (error) {
+      console.error("Error fetching or parsing calendar:", error);
+    }
+  };
 
+  useEffect(() => {
     fetchCalendar();
   }, []);
 
@@ -112,14 +174,16 @@ const App = () => {
         <h1>Skokie Coyotes 8U</h1>
       </div>
       <div className="header">
-        {nextEvent ? (
-          <>
-            <h2>Next Event</h2>
-            <p>{nextEvent.summary}</p>
-            <p>{new Date(nextEvent.start).toLocaleString()}</p>
-          </>
-        ) : null}
-      </div>
+      {nextEvent ? (
+        <div>
+          <h2>Next Event:</h2>
+          <p>{nextEvent.summary}</p>
+          <p>{new Date(nextEvent.startDate).toLocaleString()}</p>
+        </div>
+      ) : (
+        <p>Loading next event...</p>
+      )}
+    </div>
       <Router>
         <AppRoutes 
           session={session} 

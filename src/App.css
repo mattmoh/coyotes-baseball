@@ -23,8 +23,13 @@ button:focus, .form-container select:focus, .auth-container button:focus, .admin
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2rem;
+  text-align: center;
+  /* margin-bottom: 2rem; */
   color: var(--color-text-light);
+}
+
+.header h2, p {
+  margin: 0;
 }
 
 .logo {
@@ -231,7 +236,7 @@ table input[type="text"]:focus {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 40px 0; /* Increased margin */
+  margin: 30px 0;
   color: var(--color-text-light);
 }
 

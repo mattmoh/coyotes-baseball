@@ -13,6 +13,13 @@ export default defineConfig({
     watch: {
       usePolling: true, // Use polling to detect file changes
     },
+    proxy: {
+      '/api': {
+        target: 'https://api.team-manager.gc.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   },
   publicDir: 'public', // Default is 'public', ensure it's not misconfigured
 })
