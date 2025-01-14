@@ -1,59 +1,74 @@
+// src/components/ImageSlider.jsx
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import Carousel from 'react-bootstrap/Carousel';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import './Photos.css'; // Import the new CSS file
+import Slider from 'react-slick';
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 
+// Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const Photos = () => {
-  const [photos, setPhotos] = useState([]);
+const ImageSlider = () => {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPhotos = async () => {
-      const { data: files, error } = await supabase.storage.from('photos').list('');
-      if (error) {
-        console.error('Error fetching photos:', error);
-        return;
-      }
+    const fetchImages = async () => {
+      try {
+        // List all files in the bucket
+        const { data, error } = await supabase.storage
+          .from('photos')
+          .list('', { limit: 100 });
 
-      if (!files || files.length === 0) {
-        console.warn('No photos found in the bucket.');
-        return;
-      }
-
-      const photoUrls = files.map(file => {
-        const { data: publicURLData, error: publicURLError } = supabase.storage.from('photos').getPublicUrl(file.name);
-        if (publicURLError) {
-          console.error('Error getting public URL:', publicURLError);
-          return null;
+        if (error) {
+          throw error;
         }
-        return publicURLData.publicUrl;
-      });
 
-      setPhotos(photoUrls.filter(url => url !== null));
+        // Generate public URLs for the images
+        const imageUrls = data.map((file) =>
+          supabase.storage.from('photos').getPublicUrl(file.name).data.publicUrl
+        );
+
+        setImages(imageUrls);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      }
     };
 
-    fetchPhotos();
+    fetchImages();
   }, []);
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: true,
+  };
+
   return (
-    <div className="photos-container">
-      <Carousel>
-        {photos.map((photo, index) => (
-          <Carousel.Item key={index}>
-            <img
-              className="d-block w-100 photo-item"
-              src={photo}
-              alt={`Slide ${index}`}
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <Slider {...sliderSettings}>
+        {images.map((url, index) => (
+          <div key={index} style={{ textAlign: 'center' }}>
+            <img 
+              src={url} 
+              alt={`Slide ${index}`} 
+              style={{ width: '100%', borderRadius: '8px' }} 
             />
-          </Carousel.Item>
+          </div>
         ))}
-      </Carousel>
+      </Slider>
     </div>
   );
 };
 
-export default Photos;
+export default ImageSlider;
