@@ -67,7 +67,7 @@ const App = () => {
   const fetchCalendar = async () => {
     try {
       const response = await fetch(
-        '/api/ics-calendar-documents/user/ccbe7020-5bd2-4e1c-a765-279cfdcd3aef.ics?teamId=ed885410-3f79-44a3-bf00-e56aa53943a8&token=568f8c48fd9fdea20eab815a5321217fcf55744ede76cf3e3b6ddfba9b473d64'
+        import.meta.env.VITE_GC_CALENDAR
       );
       const data = await response.text();
   
