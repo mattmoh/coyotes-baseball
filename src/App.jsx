@@ -7,6 +7,7 @@ import Stats from './pages/Stats';
 import Photos from './pages/Photos';
 import Admin from './pages/Admin';
 import Auth from './pages/Auth';
+import ical from 'ical';
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -16,6 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const App = () => {
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [nextEvent, setNextEvent] = useState(null);
 
   const getSession = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -60,7 +62,24 @@ const App = () => {
       }
     };
   }, [getSession]); // Dependency array ensures this only runs once
-  
+
+  useEffect(() => {
+    const fetchCalendar = async () => {
+      try {
+        const response = await fetch(import.meta.env.VITE_GC_CALENDAR);
+        const data = await response.text();
+        const parsedData = ical.parseICS(data);
+        const events = Object.values(parsedData).filter(event => event.type === 'VEVENT');
+        const upcomingEvents = events.filter(event => new Date(event.start) > new Date());
+        upcomingEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
+        setNextEvent(upcomingEvents[0]);
+      } catch (error) {
+        console.error('Error fetching calendar:', error);
+      }
+    };
+
+    fetchCalendar();
+  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -84,6 +103,17 @@ const App = () => {
       <div className="header">
         <img src={Coyotes} className="logo" alt="Coyotes" />
         <h1>Skokie Coyotes 8U</h1>
+      </div>
+      <div className="next-event">
+        {nextEvent ? (
+          <>
+            <h2>Next Event</h2>
+            <p>{nextEvent.summary}</p>
+            <p>{new Date(nextEvent.start).toLocaleString()}</p>
+          </>
+        ) : (
+          <p>Loading next event...</p>
+        )}
       </div>
       <Router>
         <AppRoutes 

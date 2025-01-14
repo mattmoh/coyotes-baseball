@@ -26,10 +26,17 @@ const ImageSlider = () => {
           throw error;
         }
 
-        // Generate public URLs for the images
-        const imageUrls = data.map((file) =>
-          supabase.storage.from('photos').getPublicUrl(file.name).data.publicUrl
-        );
+        console.log('Files in storage bucket:', data); 
+
+        // Generate signed URLs for the images using name
+        const imageUrls = await Promise.all(data.map(async (file) => {
+          const { data: signedUrlData, error: signedUrlError } = await supabase.storage.from('photos').createSignedUrl(file.name, 3600);
+          if (signedUrlError) {
+            console.error('Error generating signed URL:', signedUrlError);
+          }
+          console.log('Generated signed URL:', signedUrlData.signedUrl);
+          return signedUrlData.signedUrl;
+        }));
 
         setImages(imageUrls);
         setLoading(false);

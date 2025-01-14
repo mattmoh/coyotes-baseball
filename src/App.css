@@ -231,7 +231,7 @@ table input[type="text"]:focus {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 20px 0;
+  margin: 40px 0; /* Increased margin */
   color: var(--color-text-light);
 }
 
